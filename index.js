@@ -1,6 +1,7 @@
 const configurationFile = require("./configurationFile.json");
-const changesList = require("./changesList3.json");
+const changesList = require("./changesList.json");
 
+Object.defineProperty(exports, "__esModule", { value: true });
 const objectDepth = (obj) => {
   if (!obj || obj.length === 0 || typeof obj !== "object") return 0;
   const keys = Object.keys(obj);
@@ -13,7 +14,6 @@ const objectDepth = (obj) => {
   });
   return depth + 1;
 };
-
 const pathController = (config, changeArr, level) => {
   let errorMessage = "";
   let validPath = false;
@@ -25,7 +25,6 @@ const pathController = (config, changeArr, level) => {
       return prev[curr];
     }, obj);
   })();
-
   if (instruction) {
     if (level < changeArr.length) {
       if (typeof instruction === "object") {
@@ -39,10 +38,10 @@ const pathController = (config, changeArr, level) => {
       validPath = true;
     }
   } else {
-    const arrayIdx = slicedArr.filter((el) => !isNaN(el));
+    const arrayIdx = slicedArr.filter((el) => !isNaN(parseInt(el)));
     for (let idx of arrayIdx) {
       let i = 0;
-      const nbrIdx = arrayIdx ? slicedArr.indexOf(arrayIdx[i]) : null;
+      const nbrIdx = slicedArr.indexOf(arrayIdx[i]);
       const newStr = slicedArr[nbrIdx - 1] + `[${idx}]`;
       slicedArr[nbrIdx - 1] = newStr;
       slicedArr.splice(nbrIdx, 1);
@@ -50,37 +49,34 @@ const pathController = (config, changeArr, level) => {
     }
     errorMessage = `The property ${slicedArr.join(".")} is undefined`;
   }
-
   if (validPath) {
     return validPath;
   } else {
     return errorMessage;
   }
 };
-
 const errorConsoleOutput = (errors, changesEntries) => {
-  const errorObj = { ...errors };
+  const errorObj = Object.assign({}, errors);
   const errorEntries = Object.entries(errorObj);
-
   console.dir("######################### ERROR LOG #########################");
   for (let error of errorEntries) {
-    const transfNbr = error[0].match(/\d+/gm)[0];
-    const errorOutput = `- Transformation n°${transfNbr}: "${
-      changesEntries[transfNbr - 1][0]
-    }" failed / Cause: ${error[1]}`;
-    console.dir(errorOutput);
+    const transfNbr = parseInt(error[0].match(/\d+/gm)[0]);
+    if (transfNbr) {
+      const errorOutput = `- Transformation n°${transfNbr}: "${
+        changesEntries[transfNbr - 1][0]
+      }" failed / Cause: ${error[1]}`;
+      console.dir(errorOutput);
+    }
   }
   console.dir("---------------------- END ---------------------");
 };
-
-const instructionController = (configurationFile, changesList) => {
-  const configuration = { ...configurationFile };
-  const changes = { ...changesList };
+const instructionControllerFn = (configurationFile, changesList) => {
+  const configuration = Object.assign({}, configurationFile);
+  const changes = Object.assign({}, changesList);
   const configurationDepth = objectDepth(configuration);
   const changesEntries = Object.entries(changes);
   const errorObj = {};
   let changeRank = 1;
-
   for (let change of changesEntries) {
     let errorMessage = "";
     const pathArr = change[0].split(".");
@@ -90,23 +86,24 @@ const instructionController = (configurationFile, changesList) => {
       for (let result of results) {
         const indexResult = pathArr.indexOf(result);
         const arrayIdx = result.match(/\[\d+\]/gm);
-        pathArr[indexResult] = pathArr[indexResult].substring(
-          0,
-          pathArr[indexResult].length - arrayIdx[0].length
-        );
-        pathArr.splice(indexResult + 1, 0, arrayIdx[0][1]);
+        if (arrayIdx) {
+          pathArr[indexResult] = pathArr[indexResult].substring(
+            0,
+            pathArr[indexResult].length - arrayIdx[0].length
+          );
+          pathArr.splice(indexResult + 1, 0, arrayIdx[0][1]);
+        }
       }
     }
-
     if (pathArr.length > configurationDepth) {
       errorMessage = "This transformation exceeds the config file's depth";
     } else {
+      let level;
       const pathControlResult = pathController(
         configuration,
         pathArr,
         (level = 1)
       );
-
       if (pathControlResult === true) {
         const arrLastElement = pathArr.pop();
         let instructionPath = pathArr.reduce((prev, curr) => {
@@ -116,18 +113,20 @@ const instructionController = (configurationFile, changesList) => {
         if (newValueType === "object") {
           if (objectDepth(change[1]) > 1) {
             errorMessage = "The new value shouldn't exceed 1 line";
-          }
-          if (Array.isArray(change[1])) {
-            change[1] = `[${change[1]}]`;
           } else {
-            change[1] = `${JSON.stringify(change[1])}`;
+            if (Array.isArray(change[1])) {
+              change[1] = `[${change[1]}]`;
+            } else {
+              change[1] = `${JSON.stringify(change[1])}`;
+            }
           }
         } else {
           change[1] = `"${change[1]}"`;
         }
-
-        const update = JSON.parse(`{ "${arrLastElement}": ${change[1]} }`);
-        Object.assign(instructionPath, update);
+        if (!errorMessage) {
+          const update = JSON.parse(`{ "${arrLastElement}": ${change[1]} }`);
+          Object.assign(instructionPath, update);
+        }
       } else {
         errorMessage = pathControlResult;
       }
@@ -146,5 +145,5 @@ const instructionController = (configurationFile, changesList) => {
 };
 
 console.log(
-  JSON.stringify(instructionController(configurationFile, changesList))
+  JSON.stringify(instructionControllerFn(configurationFile, changesList))
 );
