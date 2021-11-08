@@ -5,5 +5,5 @@
     "page1.available-filters.name-filter": { "column": "lastName", "sort": "desc" },
     "page1.available-filters.name-filter.sort": "asc",
     "page1.initialSettings.coordinates[0]": { "value": "Wow JSON injected!!" },
-    "page1.available-filters.name-filter": { "column": {"first": "name", "second": "lastName" }, "sort": "desc" }
+    "page1.available-filters.name-filter.column": { "first": {"a": 2, "b": 3}, "second": "lastName" }
 }

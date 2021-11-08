@@ -75,6 +75,8 @@ const instructionControllerFn = (configurationFile, changesList) => {
   const changes = Object.assign({}, changesList);
   const configurationDepth = objectDepth(configuration);
   const changesEntries = Object.entries(changes);
+  console.log("changeEntries: ", changesEntries);
+
   const errorObj = {};
   let changeRank = 1;
   for (let change of changesEntries) {
