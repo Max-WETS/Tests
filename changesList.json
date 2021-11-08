@@ -1,5 +1,6 @@
 {
     "page1[0].data.value": 400,
+    "page1.data[1].value": 700,
     "page1.initialSettings.color.data.value": "200",
     "page1.initialSettings.coordinates": [24,30],
     "page1.available-filters.name-filter": { "column": "lastName", "sort": "desc" },

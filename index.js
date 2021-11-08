@@ -121,7 +121,7 @@ const instructionControllerFn = (configurationFile, changesList) => {
               change[1] = `${JSON.stringify(change[1])}`;
             }
           }
-        } else {
+        } else if (newValueType === "string") {
           change[1] = `"${change[1]}"`;
         }
         if (!errorMessage) {
