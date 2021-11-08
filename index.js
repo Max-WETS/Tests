@@ -16,10 +16,12 @@ const objectDepth = (obj) => {
 };
 
 const pathController = (config, changeArr, level) => {
+  let errorMessage = "";
   let validPath = false;
+  let slicedArr;
   const instruction = (() => {
     let obj = config;
-    const slicedArr = changeArr.slice(0, level);
+    slicedArr = changeArr.slice(0, level);
     console.log("slice array: ", slicedArr);
     console.log("inputs array length: ", changeArr.length);
     return slicedArr.reduce((prev, curr) => {
@@ -37,6 +39,8 @@ const pathController = (config, changeArr, level) => {
         console.log("level", level);
         validPath = pathController(config, changeArr, level);
       } else {
+        errorMessage =
+          "The declared transformation path doesn't exist in the config file";
         console.log("this path doesn't exist");
       }
     } else if (level === changeArr.length) {
@@ -44,11 +48,29 @@ const pathController = (config, changeArr, level) => {
       console.log("end instruction", instruction);
     }
   } else {
-    console.log("this property doesn't exist");
+    const arrayIdx = slicedArr.filter((el) => !isNaN(el));
+    console.log("arrayIdx: ", arrayIdx);
+    for (let idx of arrayIdx) {
+      let i = 0;
+      const nbrIdx = arrayIdx ? slicedArr.indexOf(arrayIdx[i]) : null;
+      console.log("nbrIdx: ", nbrIdx);
+      const newStr = slicedArr[nbrIdx - 1] + `[${idx}]`;
+      slicedArr[nbrIdx - 1] = newStr;
+      console.log("newStr: ", newStr);
+      slicedArr.splice(nbrIdx, 1);
+      console.log("slicedArr: ", slicedArr);
+      i++;
+    }
+    errorMessage = `The property ${slicedArr.join(".")} is undefined`;
+    console.log("errorMessage: ", errorMessage);
   }
 
   console.log("validPath: ", validPath);
-  return validPath;
+  if (validPath) {
+    return validPath;
+  } else {
+    return errorMessage;
+  }
 };
 
 const instructionController = (configurationFile, changesList) => {
@@ -59,7 +81,13 @@ const instructionController = (configurationFile, changesList) => {
 
   const changesEntries = Object.entries(changes);
 
+  const errorObj = {};
+
+  let changeRank = 1;
+
   for (let change of changesEntries) {
+    // console.log("changeRank: ", changeRank);
+    let errorMessage = "";
     const pathArr = change[0].split(".");
     const regexp = /.+\[\d+\]$/gm;
     const result = pathArr.filter((word) => regexp.test(word));
@@ -76,12 +104,16 @@ const instructionController = (configurationFile, changesList) => {
     console.log(pathArr);
 
     if (pathArr.length > configurationDepth) {
-      console.dir("this instruction exceeds the config file's depth");
+      errorMessage = "this transformation exceeds the config file's depth";
     } else {
-      const doesPathExist = pathController(configuration, pathArr, (level = 1));
-      console.log("doesPathExist: ", doesPathExist);
+      const pathControlResult = pathController(
+        configuration,
+        pathArr,
+        (level = 1)
+      );
+      // console.log("doesPathExist: ", doesPathExist);
 
-      if (doesPathExist) {
+      if (pathControlResult === true) {
         const arrLastElement = pathArr.pop();
         let instructionPath = pathArr.reduce((prev, curr) => {
           return prev[curr];
@@ -104,9 +136,22 @@ const instructionController = (configurationFile, changesList) => {
         // console.log(
         //   configuration.page1.initialSettings.color === instructionPath
         // );
+      } else {
+        console.log(pathControlResult);
+        errorMessage = pathControlResult;
       }
     }
+    if (errorMessage) {
+      const err = JSON.parse(
+        `{ "transformation_nbr${changeRank}": "${errorMessage}" }`
+      );
+      Object.assign(errorObj, err);
+    }
+    errorMessage = "";
+    changeRank++;
+    // console.log("changeRank bottom: ", changeRank);
   }
+  console.log(errorObj);
 
   return configuration;
 };
