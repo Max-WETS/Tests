@@ -23,7 +23,7 @@ Now you can edit the 'changesList.json' file to add your own instructions
 }
 ```
 
-The newly transformed configuration file will be outputted in the console, alogn with the errors log, if any:
+The newly transformed configuration file will be outputted in the console, along with the errors log, when applicable:
 ```bash
 '######################### ERROR LOG #########################'
 '- Transformation n°1: "page1[0].data.value" failed / Cause: The property page1[0] is undefined'
